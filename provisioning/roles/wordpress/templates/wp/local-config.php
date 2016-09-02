@@ -19,7 +19,7 @@ define('DB_CHARSET', 'utf8');
 define('DB_COLLATE', '');
 
 define('WP_DEBUG', true);
-define('WP_DEBUG_DISPLAY', false);
+define('WP_DEBUG_DISPLAY', true);
 define('SCRIPT_DEBUG', true);
 define('SAVEQUERIES', true);
 
