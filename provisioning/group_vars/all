@@ -24,15 +24,4 @@ file_upload_max_size: 200
 default_php: hhvm
 
 default_plugins:
-  - query-monitor
-  - debug-objects
-  - debug-queries
-  - debug-bar
-  - wordpress-importer
   - user-switching
-  - rewrite-rules-inspector
-  - log-deprecated-notices
-
-default_repo_plugins:
-  - slug: S3-Uploads-0.9.0
-    url: "https://github.com/humanmade/S3-Uploads/archive/v0.9.0.zip"
