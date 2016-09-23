@@ -65,6 +65,15 @@ function enable()
     echo "enabling ${target_site}"
     echo "============================================="
     mv ${inactive_sites}${target_site} ${active_sites}${target_site}
+
+    echo "============================================="
+    echo "reloading vagrant"
+    echo "============================================="
+    # reload vagrant to force local DNS to update and include the newly enabled site
+    vagrant reload
+    echo "============================================="
+    echo "vagrant reloaded"
+    echo "============================================="
 }
 
 function disable()
