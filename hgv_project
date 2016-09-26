@@ -36,6 +36,14 @@ function checkDb {
     fi
 }
 
+function checkForInput()
+{
+    if [ $1 == "" ]; then
+        echo "Please specify a site"
+        exit 1
+    fi
+}
+
 function deleteDirectory()
 {
     # Make sure that a site has been specified first
@@ -59,8 +67,9 @@ function deleteDirectory()
 
 function disableAllSites()
 {
-    echo $(checkForInput)
-    mv ${active_sites}* ${inactive_sites}${target_site}
+    if checkFile ${active_sites}*; then
+        mv ${active_sites}* ${inactive_sites}
+    fi
 }
 
 # Write the <site>.yml file for a new project
@@ -83,13 +92,15 @@ wp:
         - $1.hgv.test
 EOF
 
-    echo "============================================="
-    echo "remove existing ${file_name} file..."
-    echo "============================================="
-    rm ${target_file}
-    echo "============================================="
-    echo "removed existing ${file_name}"
-    echo "============================================="
+    if checkFile ${target_file}; then
+        echo "============================================="
+        echo "remove existing ${file_name} file..."
+        echo "============================================="
+        rm ${target_file}
+        echo "============================================="
+        echo "removed existing ${file_name}"
+        echo "============================================="
+    fi
 
     echo "============================================="
     echo "writing ${file_name}..."
@@ -98,12 +109,12 @@ EOF
     echo "${yml_file}"
 
     # disable all other sites before provisioning the new site
-    echo $(disableAllSites)
+    disableAllSites
 
     # write the YAML file for the new site
     echo "${yml_file}" >> ${target_file}
     echo "============================================="
-    echo "wrote ${file_name}"
+    echo "-- wrote ${file_name}"
     echo "============================================="
 
     vagrant reload --provision
@@ -117,22 +128,25 @@ function enable()
     # disable all other sites by moving them from the active folder to the inactive folder
     printf "\n"
     echo "============================================="
-    echo "disabling all sites"
+    echo "-- disabling all sites"
     echo "============================================="
     printf "\n"
     shopt -s -q dotglob nullglob
-    mv ${active_sites}* ${inactive_sites}
 
+    if checkFile ${active_sites}*; then
+        mv ${active_sites}* ${inactive_sites}
+    fi 
+    
     printf "\n"
     echo "============================================="
-    echo "enabling ${target_site}"
+    echo "-- enabling ${target_site}"
     echo "============================================="
     printf "\n"
     mv ${inactive_sites}${target_site} ${active_sites}${target_site}
 
     printf "\n"
     echo "============================================="
-    echo "reloading vagrant"
+    echo "-- reloading vagrant"
     echo "============================================="
     printf "\n"
 
@@ -140,7 +154,7 @@ function enable()
     vagrant reload
     printf "\n"
     echo "============================================="
-    echo "vagrant reloaded"
+    echo "-- vagrant reloaded"
     echo "============================================="
     printf "\n"
 }
@@ -157,12 +171,17 @@ function disable()
     else 
         target_site="$1.yml"
         mkdir -p ${inactive_sites}
+
         printf "\n"
         echo "============================================="
-        echo "disabling ${target_site}"
+        if checkFile ${active_sites}${target_site}; then
+            echo "-- disabling ${target_site}"
+        else
+            echo "-- site not found"
+        fi
+        disableAllSites
         echo "============================================="
         printf "\n"
-        echo $(disableAllSites)
     fi
 }
 
@@ -247,8 +266,9 @@ EOF
 
 
 # Help docs for this file
-if [ "$1" == "-h" ]; then
-        printf "Usage: hgv_project [options] <command> [<args>]\n"
-        exit 1
+if [ $1 == "-h" ]; then
+    printf "Usage: hgv_project [options] <command> [<args>]\n"
+    exit 1
 fi
+
 $@
