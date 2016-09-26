@@ -4,6 +4,16 @@ site_content_directory="hgv_data/sites/"
 active_sites=${site_definions_directory}"/active/"
 inactive_sites=${site_definions_directory}"/inactive/"
 
+function checkForInput()
+{
+    if [ "$1" == "" ]; then
+        echo "Please specify a site"
+        exit 1
+    fi
+}
+
+checkForInput
+
 function checkDir() {
   if [ -d "$1" ]
   then
@@ -24,30 +34,10 @@ function checkFile() {
   fi
 }
 
-function checkDb {
-    db="${1}"
-
-    output=$(mysql -s -N -e "SELECT schema_name FROM information_schema.schemata WHERE schema_name = '${db}'" information_schema)
-  
-    if [[ -z "${output}" ]]; then
-        return 1 # does not exist
-    else
-        return 0 # exists
-    fi
-}
-
-function checkForInput()
-{
-    if [ $1 == "" ]; then
-        echo "Please specify a site"
-        exit 1
-    fi
-}
-
 function deleteDirectory()
 {
     # Make sure that a site has been specified first
-    if [ ! $1 == "" ]; then
+    if [ ! "$1"" == "" ]; then
         if checkDir ${site_content_directory}$1; then
             printf "\n"
             echo "-- removing directory: ${site_content_directory}$1"
@@ -266,7 +256,7 @@ EOF
 
 
 # Help docs for this file
-if [ $1 == "-h" ]; then
+if [ "$1" == "-h" ]; then
     printf "Usage: hgv_project [options] <command> [<args>]\n"
     exit 1
 fi
