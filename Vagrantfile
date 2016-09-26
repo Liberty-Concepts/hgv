@@ -41,9 +41,6 @@ end
 domains_array += domains_from_yml(default_installs)
 # Load user specified domain file
 Dir.glob( custom_installs_dir + "/*.yml").each do |custom_file|
-    print "======================="
-    print "current site file: " + custom_file
-    print "======================="
     domains_array += domains_from_yml(custom_file)
 end
 # Legacy/deprecated file support.  Remove this check in the future.
