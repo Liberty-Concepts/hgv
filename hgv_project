@@ -1,7 +1,67 @@
 #!/bin/bash
-sites_directory="hgv_data/config/sites"
-active_sites=${sites_directory}"/active/"
-inactive_sites=${sites_directory}"/inactive/"
+site_definions_directory="hgv_data/config/sites"
+site_content_directory="hgv_data/sites/"
+active_sites=${site_definions_directory}"/active/"
+inactive_sites=${site_definions_directory}"/inactive/"
+
+function checkDir() {
+  if [ -d "$1" ]
+  then
+    # 0 = true
+    return 0 
+  else
+    # 1 = false
+    return 1
+  fi
+}
+
+function checkFile() {
+  if [ -f "$1" ]
+  then
+    return 0 # exists
+  else
+    return 1 # does not exist
+  fi
+}
+
+function checkDb {
+    db="${1}"
+
+    output=$(mysql -s -N -e "SELECT schema_name FROM information_schema.schemata WHERE schema_name = '${db}'" information_schema)
+  
+    if [[ -z "${output}" ]]; then
+        return 1 # does not exist
+    else
+        return 0 # exists
+    fi
+}
+
+function deleteDirectory()
+{
+    # Make sure that a site has been specified first
+    if [ ! $1 == "" ]; then
+        if checkDir ${site_content_directory}$1; then
+            printf "\n"
+            echo "-- removing directory: ${site_content_directory}$1"
+            printf "\n"
+            rm -rf ${site_content_directory}$1
+        else 
+            printf "\n"
+            echo "-- directory not found"
+            printf "\n"
+        fi
+    else 
+        printf "\n"
+        echo "-- No directory specified"
+        printf "\n"
+    fi
+}
+
+function disableAllSites()
+{
+    echo $(checkForInput)
+    mv ${active_sites}* ${inactive_sites}${target_site}
+}
 
 # Write the <site>.yml file for a new project
 function build()
@@ -55,40 +115,140 @@ function enable()
     mkdir -p ${active_sites}
     
     # disable all other sites by moving them from the active folder to the inactive folder
+    printf "\n"
     echo "============================================="
     echo "disabling all sites"
     echo "============================================="
+    printf "\n"
     shopt -s -q dotglob nullglob
     mv ${active_sites}* ${inactive_sites}
 
+    printf "\n"
     echo "============================================="
     echo "enabling ${target_site}"
     echo "============================================="
+    printf "\n"
     mv ${inactive_sites}${target_site} ${active_sites}${target_site}
 
+    printf "\n"
     echo "============================================="
     echo "reloading vagrant"
     echo "============================================="
+    printf "\n"
+
     # reload vagrant to force local DNS to update and include the newly enabled site
     vagrant reload
+    printf "\n"
     echo "============================================="
     echo "vagrant reloaded"
     echo "============================================="
+    printf "\n"
 }
 
 function disable()
 {
-    target_site="$1.yml"
-    mkdir -p ${inactive_sites}
-    echo "============================================="
-    echo "disabling ${target_site}"
-    echo "============================================="
-    echo $(disableAllSites)
+    if [ "$1" == "" ]; then
+        printf "\n"
+        echo "|==================================|"
+        echo "|  You must specify a target site  |" 
+        echo "|==================================|"
+        printf "\n"
+        exit 1
+    else 
+        target_site="$1.yml"
+        mkdir -p ${inactive_sites}
+        printf "\n"
+        echo "============================================="
+        echo "disabling ${target_site}"
+        echo "============================================="
+        printf "\n"
+        echo $(disableAllSites)
+    fi
 }
 
-function disableAllSites()
+function destroy()
 {
-    mv ${active_sites}* ${inactive_sites}${target_site}
+    target=$1
+    target_site="${target}.yml"
+    target_site_content_directory=${site_content_directory}${target}
+
+    printf "\n"
+    echo "==============================================================================="
+    echo "Hey, this is a REALLY drastic measure.  This will remove the the following:"
+    printf "\n"
+    echo "- $1.yml"
+    echo "- ${target_site_content_directory}"
+    echo "- the SQL database for wpe_${target}"
+    printf "\n"
+    echo "This will also delete your local working repo, so you had better make"
+    echo "sure all of your commits are up to date."
+    printf "\n"
+    echo "Are you REALLY sure you want to do this? y/N"
+    echo "==============================================================================="
+    printf "\n"
+    read confirm
+
+    if [ ${confirm} ==  "y" ]; then
+        printf "\n"
+        echo "============================================="
+        echo "removing database"
+        echo "============================================="
+        printf "\n"
+
+        read -d '' remove_site_sql <<EOF
+   DROP wpe_${target};
+EOF
+        vagrant ssh -c "mysqladmin -u root -f ${remove_site_sql} exit"
+
+        printf "\n"
+        echo "============================================="
+        echo "database removed"
+        echo "============================================="
+        printf "\n"
+
+        printf "\n"
+        echo "============================================="
+        echo "Checking for YAML file"
+        echo "============================================="
+        printf "\n"
+
+        if checkFile ${inactive_sites}${target_site}; then
+            rm ${inactive_sites}${target_site}
+            echo "-- removing ${target_site}"
+        elif checkFile ${active_sites}${target_site}; then
+            rm ${active_sites}${target_site}
+            echo "-- removing ${target_site}"
+        else
+            echo "-- No matching YAML file found"
+        fi
+
+        printf "\n"
+        echo "============================================="
+        echo "Done checking for YAML file"
+        echo "============================================="
+        printf "\n"
+
+        printf "\n"
+        echo "============================================="
+        echo "Checking for site content directory at ${target_site_content_directory}"
+        echo "============================================="
+
+        deleteDirectory ${target}
+
+        echo "============================================="
+        echo "Done checking for site content directory"
+        echo "============================================="
+        exit
+    else
+        echo "Abort codes accepted, missiles standing down."
+        exit 1
+    fi
 }
 
+
+# Help docs for this file
+if [ "$1" == "-h" ]; then
+        printf "Usage: hgv_project [options] <command> [<args>]\n"
+        exit 1
+fi
 $@
