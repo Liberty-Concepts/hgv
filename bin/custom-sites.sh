@@ -26,7 +26,7 @@ if [ -e "/vagrant/hgv_data/config/provisioning/ansible.yml" ] ; then
 fi
 
 shopt -s nullglob
-for file in /vagrant/provisioning/default-install.yml /vagrant/hgv_data/config/*.yml /vagrant/hgv_data/config/sites/*.yml
+for file in /vagrant/provisioning/default-install.yml /vagrant/hgv_data/config/*.yml /vagrant/hgv_data/config/sites/active/*.yml
 do
     echo "### Provisioning $file ###"
     $ANS_BIN /vagrant/provisioning/wordpress.yml -i'127.0.0.1,' --extra-vars="@$file" --extra-vars="$EXTRA"
