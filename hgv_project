@@ -65,88 +65,106 @@ function disableAllSites()
 # Write the <site>.yml file for a new project
 function build()
 {
-    # the sites directory where the .yml files for each site is stored
-    file_name="$1.yml"
-    target_file="${active_sites}${file_name}"
+    if ! checkForInput $1; then
+        echo "You must specify the name of the site to be built"
+        exit 1
+    else 
+        # the sites directory where the .yml files for each site is stored
+        file_name="$1.yml"
+        target_file="${active_sites}${file_name}"
 
-    mkdir -p ${active_sites}
+        mkdir -p ${active_sites}
 
-# set up the structure for the YAML file
-read -d '' yml_file <<EOF
----
-wp:
-    enviro: $1
-    hhvm_domains:
-        - $1-hhvm.hgv.test
-    php_domains:
-        - $1.hgv.test
+    # set up the structure for the YAML file
+    read -d '' yml_file <<EOF
+    ---
+    wp:
+        enviro: $1
+        hhvm_domains:
+            - $1-hhvm.hgv.test
+        php_domains:
+            - $1.hgv.test
 EOF
 
-    if checkFile ${target_file}; then
+        if checkFile ${target_file}; then
+            echo "============================================="
+            echo "remove existing ${file_name} file..."
+            echo "============================================="
+            rm ${target_file}
+            echo "============================================="
+            echo "removed existing ${file_name}"
+            echo "============================================="
+        fi
+
         echo "============================================="
-        echo "remove existing ${file_name} file..."
+        echo "writing ${file_name}..."
         echo "============================================="
-        rm ${target_file}
+        # show the user the contents of the YAML file to be written
+        echo "${yml_file}"
+
+        # disable all other sites before provisioning the new site
+        disableAllSites
+
+        # write the YAML file for the new site
+        echo "${yml_file}" >> ${target_file}
         echo "============================================="
-        echo "removed existing ${file_name}"
+        echo "-- wrote ${file_name}"
         echo "============================================="
+
+        vagrant reload --provision
     fi
-
-    echo "============================================="
-    echo "writing ${file_name}..."
-    echo "============================================="
-    # show the user the contents of the YAML file to be written
-    echo "${yml_file}"
-
-    # disable all other sites before provisioning the new site
-    disableAllSites
-
-    # write the YAML file for the new site
-    echo "${yml_file}" >> ${target_file}
-    echo "============================================="
-    echo "-- wrote ${file_name}"
-    echo "============================================="
-
-    vagrant reload --provision
 }
 
 function enable()
 {
     target_site="$1.yml"
-    mkdir -p ${active_sites}
     
-    # disable all other sites by moving them from the active folder to the inactive folder
-    printf "\n"
-    echo "============================================="
-    echo "-- disabling all sites"
-    echo "============================================="
-    printf "\n"
-    shopt -s -q dotglob nullglob
+    if checkFile ${inactive_sites}${target_site};
+    then
+        mkdir -p ${active_sites}
+        
+        # disable all other sites by moving them from the active folder to the inactive folder
+        printf "\n"
+        echo "============================================="
+        echo "-- disabling all sites"
+        echo "============================================="
+        printf "\n"
+        shopt -s -q dotglob nullglob
 
-    if checkFile ${active_sites}*; then
-        mv ${active_sites}* ${inactive_sites}
-    fi 
-    
-    printf "\n"
-    echo "============================================="
-    echo "-- enabling ${target_site}"
-    echo "============================================="
-    printf "\n"
-    mv ${inactive_sites}${target_site} ${active_sites}${target_site}
+        if checkFile ${active_sites}*;
+        then
+            mv ${active_sites}* ${inactive_sites}
+        fi 
+        
+        printf "\n"
+        echo "============================================="
+        echo "-- enabling ${target_site}"
+        echo "============================================="
+        printf "\n"
+        mv ${inactive_sites}${target_site} ${active_sites}${target_site}
 
-    printf "\n"
-    echo "============================================="
-    echo "-- reloading vagrant"
-    echo "============================================="
-    printf "\n"
 
-    # reload vagrant to force local DNS to update and include the newly enabled site
-    vagrant reload
-    printf "\n"
-    echo "============================================="
-    echo "-- vagrant reloaded"
-    echo "============================================="
-    printf "\n"
+
+        printf "\n"
+        echo "============================================="
+        echo "-- reloading vagrant"
+        echo "============================================="
+        printf "\n"
+
+        # reload vagrant to force local DNS to update and include the newly enabled site
+        vagrant reload
+        printf "\n"
+        echo "============================================="
+        echo "-- vagrant reloaded"
+        echo "============================================="
+        printf "\n"
+    else
+        printf "\n"
+        echo "============================================="
+        echo "-- No matching site found to enable"
+        echo "============================================="
+        printf "\n"
+    fi
 }
 
 function disable()
@@ -160,18 +178,28 @@ function disable()
         exit 1
     else 
         target_site="$1.yml"
-        mkdir -p ${inactive_sites}
 
-        printf "\n"
-        echo "============================================="
-        if checkFile ${active_sites}${target_site}; then
-            echo "-- disabling ${target_site}"
-        else
-            echo "-- site not found"
+        if checkFile ${active_sites}$1".yml";
+        then
+            mkdir -p ${inactive_sites}
+
+            printf "\n"
+            echo "============================================="
+            if checkFile ${active_sites}${target_site}; then
+                echo "-- disabling ${target_site}"
+            else
+                echo "-- site not found"
+            fi
+            disableAllSites
+            echo "============================================="
+            printf "\n"
+        else 
+            printf "\n"
+            echo "============================================="
+            echo "-- No matching site found to disable"
+            echo "============================================="
+            printf "\n"
         fi
-        disableAllSites
-        echo "============================================="
-        printf "\n"
     fi
 }
 
@@ -185,7 +213,7 @@ function destroy()
     echo "==============================================================================="
     echo "Hey, this is a REALLY drastic measure.  This will remove the the following:"
     printf "\n"
-    echo "- $1.yml"
+    echo "- ${target_site}"
     echo "- ${target_site_content_directory}"
     echo "- the SQL database for wpe_${target}"
     printf "\n"
