@@ -37,7 +37,7 @@ function checkFile() {
 function deleteDirectory()
 {
     # Make sure that a site has been specified first
-    if [ ! "$1"" == "" ]; then
+    if [ ! "$1" == "" ]; then
         if checkDir ${site_content_directory}$1; then
             printf "\n"
             echo "-- removing directory: ${site_content_directory}$1"
