@@ -6,13 +6,13 @@ inactive_sites=${site_definions_directory}"/inactive/"
 
 function checkForInput()
 {
-    if [ "$1" == "" ]; then
-        echo "Please specify a site"
-        exit 1
+    if [ "$1" != "" ];
+    then
+        return 0 # exists
+    else
+        return 1 # does not exist
     fi
 }
-
-checkForInput
 
 function checkDir() {
   if [ -d "$1" ]
