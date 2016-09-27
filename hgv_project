@@ -4,6 +4,16 @@ site_content_directory="hgv_data/sites/"
 active_sites=${site_definions_directory}"/active/"
 inactive_sites=${site_definions_directory}"/inactive/"
 
+function showNoInputError()
+{
+    printf "\n"
+    echo "|==================================|"
+    echo "|  You must specify a target site  |" 
+    echo "|==================================|"
+    printf "\n"
+    exit 1
+}
+
 function checkForInput()
 {
     if [ "$1" != "" ];
@@ -37,7 +47,8 @@ function checkFile() {
 function deleteDirectory()
 {
     # Make sure that a site has been specified first
-    if [ ! "$1" == "" ]; then
+    if checkForInput $1;
+    then
         if checkDir ${site_content_directory}$1; then
             printf "\n"
             echo "-- removing directory: ${site_content_directory}$1"
@@ -107,8 +118,9 @@ EOF
 
         # write the YAML file for the new site
         echo "${yml_file}" >> ${target_file}
+        echo "-- file written"
         echo "============================================="
-        echo "-- wrote ${file_name}"
+        echo "wrote ${file_name}"
         echo "============================================="
 
         vagrant reload --provision
@@ -143,8 +155,6 @@ function enable()
         printf "\n"
         mv ${inactive_sites}${target_site} ${active_sites}${target_site}
 
-
-
         printf "\n"
         echo "============================================="
         echo "-- reloading vagrant"
@@ -169,13 +179,9 @@ function enable()
 
 function disable()
 {
-    if [ "$1" == "" ]; then
-        printf "\n"
-        echo "|==================================|"
-        echo "|  You must specify a target site  |" 
-        echo "|==================================|"
-        printf "\n"
-        exit 1
+    if checkForInput;
+    then
+        showNoInputError
     else 
         target_site="$1.yml"
 
