@@ -77,8 +77,7 @@ function disableAllSites()
 function build()
 {
     if ! checkForInput $1; then
-        echo "You must specify the name of the site to be built"
-        exit 1
+        showNoInputError
     else 
         # the sites directory where the .yml files for each site is stored
         file_name="$1.yml"
