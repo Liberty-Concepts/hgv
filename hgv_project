@@ -128,60 +128,71 @@ EOF
 
 function enable()
 {
-    target_site="$1.yml"
-    
-    if checkFile ${inactive_sites}${target_site};
+    if checkForInput $1;
     then
-        mkdir -p ${active_sites}
+        target_site="$1.yml"
         
-        # disable all other sites by moving them from the active folder to the inactive folder
-        printf "\n"
-        echo "============================================="
-        echo "-- disabling all sites"
-        echo "============================================="
-        printf "\n"
-        shopt -s -q dotglob nullglob
-
-        if checkFile ${active_sites}*;
+        if checkFile ${active_sites}${target_site};
         then
-            mv ${active_sites}* ${inactive_sites}
-        fi 
-        
-        printf "\n"
-        echo "============================================="
-        echo "-- enabling ${target_site}"
-        echo "============================================="
-        printf "\n"
-        mv ${inactive_sites}${target_site} ${active_sites}${target_site}
+            printf "\n"
+            echo "============================================="
+            echo "-- This site is already active.  Have you run 'vagrant up'?"
+            echo "============================================="
+            printf "\n"
+            
+        elif checkFile ${inactive_sites}${target_site};
+        then
+            mkdir -p ${active_sites}
+            
+            # disable all other sites by moving them from the active folder to the inactive folder
+            printf "\n"
+            echo "============================================="
+            echo "-- disabling all sites"
+            echo "============================================="
+            printf "\n"
+            shopt -s -q dotglob nullglob
 
-        printf "\n"
-        echo "============================================="
-        echo "-- reloading vagrant"
-        echo "============================================="
-        printf "\n"
+            if checkFile ${active_sites}*;
+            then
+                mv ${active_sites}* ${inactive_sites}
+            fi 
+            
+            printf "\n"
+            echo "============================================="
+            echo "-- enabling ${target_site}"
+            echo "============================================="
+            printf "\n"
+            mv ${inactive_sites}${target_site} ${active_sites}${target_site}
 
-        # reload vagrant to force local DNS to update and include the newly enabled site
-        vagrant reload
-        printf "\n"
-        echo "============================================="
-        echo "-- vagrant reloaded"
-        echo "============================================="
-        printf "\n"
+            printf "\n"
+            echo "============================================="
+            echo "-- reloading vagrant"
+            echo "============================================="
+            printf "\n"
+
+            # reload vagrant to force local DNS to update and include the newly enabled site
+            vagrant reload
+            printf "\n"
+            echo "============================================="
+            echo "-- vagrant reloaded"
+            echo "============================================="
+            printf "\n"
+        else
+            printf "\n"
+            echo "============================================="
+            echo "-- No matching site found to enable"
+            echo "============================================="
+            printf "\n"
+        fi
     else
-        printf "\n"
-        echo "============================================="
-        echo "-- No matching site found to enable"
-        echo "============================================="
-        printf "\n"
+        showNoInputError
     fi
 }
 
 function disable()
 {
-    if checkForInput;
+    if checkForInput $1;
     then
-        showNoInputError
-    else 
         target_site="$1.yml"
 
         if checkFile ${active_sites}$1".yml";
@@ -205,91 +216,97 @@ function disable()
             echo "============================================="
             printf "\n"
         fi
+    else 
+        showNoInputError
     fi
 }
 
 function destroy()
 {
-    target=$1
-    target_site="${target}.yml"
-    target_site_content_directory=${site_content_directory}${target}
+    if checkForInput $1;
+    then
+        target=$1
+        target_site="${target}.yml"
+        target_site_content_directory=${site_content_directory}${target}
 
-    printf "\n"
-    echo "==============================================================================="
-    echo "Hey, this is a REALLY drastic measure.  This will remove the the following:"
-    printf "\n"
-    echo "- ${target_site}"
-    echo "- ${target_site_content_directory}"
-    echo "- the SQL database for wpe_${target}"
-    printf "\n"
-    echo "This will also delete your local working repo, so you had better make"
-    echo "sure all of your commits are up to date."
-    printf "\n"
-    echo "Are you REALLY sure you want to do this? y/N"
-    echo "==============================================================================="
-    printf "\n"
-    read confirm
-
-    if [ ${confirm} ==  "y" ]; then
         printf "\n"
-        echo "============================================="
-        echo "removing database"
-        echo "============================================="
+        echo "==============================================================================="
+        echo "Hey, this is a REALLY drastic measure.  This will remove the the following:"
         printf "\n"
+        echo "- ${target_site}"
+        echo "- ${target_site_content_directory}"
+        echo "- the SQL database for wpe_${target}"
+        printf "\n"
+        echo "This will also delete your local working repo, so you had better make"
+        echo "sure all of your commits are up to date."
+        printf "\n"
+        echo "Are you REALLY sure you want to do this? y/N"
+        echo "==============================================================================="
+        printf "\n"
+        read confirm
 
-        read -d '' remove_site_sql <<EOF
-   DROP wpe_${target};
+        if [ ${confirm} ==  "y" ]; then
+            printf "\n"
+            echo "============================================="
+            echo "removing database"
+            echo "============================================="
+            printf "\n"
+
+            read -d '' remove_site_sql <<EOF
+    DROP wpe_${target};
 EOF
-        vagrant ssh -c "mysqladmin -u root -f ${remove_site_sql} exit"
+            vagrant ssh -c "mysqladmin -u root -f ${remove_site_sql} exit"
 
-        printf "\n"
-        echo "============================================="
-        echo "database removed"
-        echo "============================================="
-        printf "\n"
+            printf "\n"
+            echo "============================================="
+            echo "database removed"
+            echo "============================================="
+            printf "\n"
 
-        printf "\n"
-        echo "============================================="
-        echo "Checking for YAML file"
-        echo "============================================="
-        printf "\n"
+            printf "\n"
+            echo "============================================="
+            echo "Checking for YAML file"
+            echo "============================================="
+            printf "\n"
 
-        if checkFile ${inactive_sites}${target_site}; then
-            rm ${inactive_sites}${target_site}
-            echo "-- removing ${target_site}"
-        elif checkFile ${active_sites}${target_site}; then
-            rm ${active_sites}${target_site}
-            echo "-- removing ${target_site}"
+            if checkFile ${inactive_sites}${target_site}; then
+                rm ${inactive_sites}${target_site}
+                echo "-- removing ${target_site}"
+            elif checkFile ${active_sites}${target_site}; then
+                rm ${active_sites}${target_site}
+                echo "-- removing ${target_site}"
+            else
+                echo "-- No matching YAML file found"
+            fi
+
+            printf "\n"
+            echo "============================================="
+            echo "Done checking for YAML file"
+            echo "============================================="
+            printf "\n"
+
+            printf "\n"
+            echo "============================================="
+            echo "Checking for site content directory at ${target_site_content_directory}"
+            echo "============================================="
+
+            deleteDirectory ${target}
+
+            echo "============================================="
+            echo "Done checking for site content directory"
+            echo "============================================="
+            exit
         else
-            echo "-- No matching YAML file found"
+            echo "Abort codes accepted, missiles standing down."
+            exit 1
         fi
-
-        printf "\n"
-        echo "============================================="
-        echo "Done checking for YAML file"
-        echo "============================================="
-        printf "\n"
-
-        printf "\n"
-        echo "============================================="
-        echo "Checking for site content directory at ${target_site_content_directory}"
-        echo "============================================="
-
-        deleteDirectory ${target}
-
-        echo "============================================="
-        echo "Done checking for site content directory"
-        echo "============================================="
-        exit
     else
-        echo "Abort codes accepted, missiles standing down."
-        exit 1
+        showNoInputError
     fi
 }
 
-
 # Help docs for this file
-if [ "$1" == "-h" ]; then
+if [ "$1" == "-h" ] || [ "$1" == "" ]; then
     printf "Usage: hgv_project [options] <command> [<args>]\n"
     exit 1
 fi
