@@ -190,6 +190,37 @@ function destroy()
 
         printf "\n"
         echo "==============================================================================="
+        printf "\n"
+        cat <<EOF
+                 xxxxxxx
+             xxxxxxxxxxxxxxx
+          xxxxxxxxxxxxxxxxxxxxx
+         xxxxxxxxxxxxxxxxxxxxxxx
+        xxxxxxxxxxxxxxxxxxxxxxxxx
+       xxxxxxxxxxxxxxxxxxxxxxxxxxx
+       xxxxxxxxxxxxxxxxxxxxxxxxxxx
+       xxxxxxxx   xxxxx   xxxxxxxx
+       xxxxxx      xxx       xxxxx
+        xxxx       xxx       xxxx
+        xxxx      xxxxx      xxxx
+         xxxxxxxxxx   xxxxxxxxxx
+          xxxxxxxxx   xxxxxxxxx
+            xxxxxxxxxxxxxxxxx
+             xxxxxxxxxxxxxxx
+  xxx        xxxx x x x xxxx       xxx
+ xxxxx        xxxxxxxxxxxxx       xxxxx
+  xxxxxxx      xxxxxxxxxxx     xxxxxxxx
+xxxxxxxxxxxxxx    xxxxx    xxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxx   xxxxxxxxxxxxxxxxxx
+ xxx      xxxxxxxxxxxxxxx xxxxxx
+           xxxx xxxxxxxxxxxxxxx
+  xxxxxxxxxxxxxxxxxx xxxxxxxxxxxxxxxxxxx
+  xxxxxxxxxxxxxx           xxxxxxxxxxxxxx
+   xxxxxxx                      xxxxxxxx
+     xxxx                         xxxxx
+EOF
+
+        printf "\n"
         echo "Hey, this is a REALLY drastic measure.  This will remove the the following:"
         printf "\n"
         echo "- ${target_site}"
@@ -235,7 +266,7 @@ EOF
             
             exit
         else
-            echo "Abort codes accepted, missiles standing down."
+            outputMessage "Abort codes accepted, missiles standing down."
             exit 1
         fi
     else
