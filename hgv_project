@@ -307,7 +307,14 @@ EOF
 
 # Help docs for this file
 if [ "$1" == "-h" ] || [ "$1" == "" ]; then
-    printf "Usage: hgv_project [options] <command> [<args>]\n"
+    printf "\n"
+    printf "Usage: hgv_project <command> <site>\n"
+    printf "\n"
+    printf "    build       create a new <site>.yml file, reload vagrant, and then run vagrant provision\n"
+    printf "    enable      move an existing <site>.yml file into the 'active' directory and then run a vagrant reload\n"
+    printf "    disable     move an existing <site>.yml file from the 'active' to 'inactive' directory\n"
+    printf "    destroy     completely removing a local site by deleting <site>.yml, /hgv_data/sites/<site>, and the SQL database for wpe_<site>\n"
+    printf "\n"
     exit 1
 fi
 
