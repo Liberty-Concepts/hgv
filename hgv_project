@@ -4,13 +4,19 @@ site_content_directory="hgv_data/sites/"
 active_sites=${site_definions_directory}"/active/"
 inactive_sites=${site_definions_directory}"/inactive/"
 
+function outputMessage()
+{
+    message_text=$1
+    printf "\n"
+    echo "<=============================================>"
+    echo "  ${message_text}"
+    echo "<=============================================>"
+    printf "\n"
+}
+
 function showNoInputError()
 {
-    printf "\n"
-    echo "|==================================|"
-    echo "|  You must specify a target site  |" 
-    echo "|==================================|"
-    printf "\n"
+    outputMessage "You must specify a target site"
     exit 1
 }
 
@@ -50,19 +56,13 @@ function deleteDirectory()
     if checkForInput $1;
     then
         if checkDir ${site_content_directory}$1; then
-            printf "\n"
-            echo "-- removing directory: ${site_content_directory}$1"
-            printf "\n"
+            outputMessage "removing directory: ${site_content_directory}$1"
             rm -rf ${site_content_directory}$1
         else 
-            printf "\n"
-            echo "-- directory not found"
-            printf "\n"
+            outputMessage "directory not found"
         fi
     else 
-        printf "\n"
-        echo "-- No directory specified"
-        printf "\n"
+        outputMessage "no directory specified"
     fi
 }
 
@@ -97,18 +97,12 @@ function build()
 EOF
 
         if checkFile ${target_file}; then
-            echo "============================================="
-            echo "remove existing ${file_name} file..."
-            echo "============================================="
+            outputMessage "remove existing ${file_name} file..."
             rm ${target_file}
-            echo "============================================="
-            echo "removed existing ${file_name}"
-            echo "============================================="
+            outputMessage "removed existing ${file_name}"
         fi
 
-        echo "============================================="
-        echo "writing ${file_name}..."
-        echo "============================================="
+        outputMessage "writing ${file_name}..."
         # show the user the contents of the YAML file to be written
         echo "${yml_file}"
 
@@ -117,10 +111,8 @@ EOF
 
         # write the YAML file for the new site
         echo "${yml_file}" >> ${target_file}
-        echo "-- file written"
-        echo "============================================="
-        echo "wrote ${file_name}"
-        echo "============================================="
+        outputMessage "file written"
+        outputMessage "wrote ${file_name}"
 
         vagrant reload --provision
     fi
@@ -134,22 +126,13 @@ function enable()
         
         if checkFile ${active_sites}${target_site};
         then
-            printf "\n"
-            echo "============================================="
-            echo "-- This site is already active.  Have you run 'vagrant up'?"
-            echo "============================================="
-            printf "\n"
-            
+            outputMessage "This site is already active.  Have you run 'vagrant up'?"
         elif checkFile ${inactive_sites}${target_site};
         then
             mkdir -p ${active_sites}
             
             # disable all other sites by moving them from the active folder to the inactive folder
-            printf "\n"
-            echo "============================================="
-            echo "-- disabling all sites"
-            echo "============================================="
-            printf "\n"
+            outputMessage "disabling all sites"
             shopt -s -q dotglob nullglob
 
             if checkFile ${active_sites}*;
@@ -157,32 +140,16 @@ function enable()
                 mv ${active_sites}* ${inactive_sites}
             fi 
             
-            printf "\n"
-            echo "============================================="
-            echo "-- enabling ${target_site}"
-            echo "============================================="
-            printf "\n"
+            outputMessage "enabling ${target_site}"
             mv ${inactive_sites}${target_site} ${active_sites}${target_site}
 
-            printf "\n"
-            echo "============================================="
-            echo "-- reloading vagrant"
-            echo "============================================="
-            printf "\n"
+            outputMessage "reloading vagrant"
 
             # reload vagrant to force local DNS to update and include the newly enabled site
             vagrant reload
-            printf "\n"
-            echo "============================================="
-            echo "-- vagrant reloaded"
-            echo "============================================="
-            printf "\n"
+            outputMessage "vagrant reloaded"
         else
-            printf "\n"
-            echo "============================================="
-            echo "-- No matching site found to enable"
-            echo "============================================="
-            printf "\n"
+            outputMessage "no matching site found to enable"
         fi
     else
         showNoInputError
@@ -199,22 +166,14 @@ function disable()
         then
             mkdir -p ${inactive_sites}
 
-            printf "\n"
-            echo "============================================="
             if checkFile ${active_sites}${target_site}; then
-                echo "-- disabling ${target_site}"
+                outputMessage "disabling ${target_site}"
             else
-                echo "-- site not found"
+                outputMessage "site not found"
             fi
             disableAllSites
-            echo "============================================="
-            printf "\n"
-        else 
-            printf "\n"
-            echo "============================================="
-            echo "-- No matching site found to disable"
-            echo "============================================="
-            printf "\n"
+        else
+            outputMessage "no matching site found to disable"
         fi
     else 
         showNoInputError
@@ -246,28 +205,16 @@ function destroy()
         read confirm
 
         if [ ${confirm} ==  "y" ]; then
-            printf "\n"
-            echo "============================================="
-            echo "removing database"
-            echo "============================================="
-            printf "\n"
-
+            # connect to the HGV vagrant machine and remove the target wpe_<site> SQL database
+            outputMessage "removing database"
             read -d '' remove_site_sql <<EOF
     DROP wpe_${target};
 EOF
             vagrant ssh -c "mysqladmin -u root -f ${remove_site_sql} exit"
+            outputMessage "database removed"
 
-            printf "\n"
-            echo "============================================="
-            echo "database removed"
-            echo "============================================="
-            printf "\n"
-
-            printf "\n"
-            echo "============================================="
-            echo "Checking for YAML file"
-            echo "============================================="
-            printf "\n"
+            # Check for the <site>.yml file to remove
+            outputMessage "checking for YAML file"
 
             if checkFile ${inactive_sites}${target_site}; then
                 rm ${inactive_sites}${target_site}
@@ -279,22 +226,13 @@ EOF
                 echo "-- No matching YAML file found"
             fi
 
-            printf "\n"
-            echo "============================================="
-            echo "Done checking for YAML file"
-            echo "============================================="
-            printf "\n"
+            outputMessage "done checking for YAML file"
 
-            printf "\n"
-            echo "============================================="
-            echo "Checking for site content directory at ${target_site_content_directory}"
-            echo "============================================="
-
+            # Check for the site content directory to remove
+            outputMessage "Checking for site content directory at ${target_site_content_directory}"
             deleteDirectory ${target}
-
-            echo "============================================="
-            echo "Done checking for site content directory"
-            echo "============================================="
+            outputMessage "Done checking for site content directory"
+            
             exit
         else
             echo "Abort codes accepted, missiles standing down."
