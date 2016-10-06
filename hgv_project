@@ -123,10 +123,25 @@ function enable()
     if checkForInput $1;
     then
         target_site="$1.yml"
-        
+
         if checkFile ${active_sites}${target_site};
         then
-            outputMessage "This site is already active.  Have you run 'vagrant up'?"
+            echo ${site_content_directory}$1"/wp-admin"
+            if checkDir ${site_content_directory}$1"/wp-admin"
+            then
+                outputMessage "This site is already active.  Have you run 'vagrant up'?"
+            else
+                outputMessage "There is no Wordpress installation for this site.  Run 'vagrant provision' now? y/N"
+                read provision
+
+                if [ ${provision} ==  "y" ];
+                then
+                    outputMessage "provisioning site"
+                    vagrant provision
+                else
+                    outputMessage "skipping provision, site enabling halted"
+                fi
+            fi
         elif checkFile ${inactive_sites}${target_site};
         then
             mkdir -p ${active_sites}
@@ -148,6 +163,8 @@ function enable()
             # reload vagrant to force local DNS to update and include the newly enabled site
             vagrant reload
             outputMessage "vagrant reloaded"
+
+            
         else
             outputMessage "no matching site found to enable"
         fi
