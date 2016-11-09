@@ -261,6 +261,10 @@ EOF
             vagrant ssh -c "mysqladmin -u root -f ${remove_site_sql} exit"
             outputMessage "database removed"
 
+            outputMessage "removing /etc/nginx/conf.d/www-${target}.conf"
+            vagrant ssh -c "sudo rm /etc/nginx/conf.d/www-${target}.conf"
+            outputMessage "nginx configuration removed"
+
             # Check for the <site>.yml file to remove
             outputMessage "checking for YAML file"
 
